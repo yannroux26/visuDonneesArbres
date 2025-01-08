@@ -34,44 +34,157 @@
 </head>
 <body>
   <h2>Directory Tree</h2>
-  <svg width="100%" height="600"></svg>
+  <svg id="hierarchicalTree" width="100%" height="600"></svg>
+  <h2>Bubble Chart</h2>
+  <svg id="stackedBarChart" width="100%" height="400"></svg>
+   <script>
+    const data = {
+      "tree": {
+        "files": {
+          "package-lock.json": 656216,
+          "package.json": 1025,
+          "README.md": 3429
+        },
+        "directories": {
+          "public": {
+            "files": {
+              "DELAYS512.png": 85473,
+              "DELAYS5192.png": 85473,
+              "favicon.ico": 85473,
+              "index.html": 1771,
+              "manifest.json": 517,
+              "robots.txt": 70
+            },
+            "directories": {
+              "data": {
+                "files": {
+                  "france-regions.json": 489330,
+                  "regularite-mensuelle-ter-by-region-and-year.csv": 8519,
+                  "regularite-mensuelle-ter.csv": 1278
+                },
+                "directories": {}
+              }
+            }
+          },
+          "src": {
+            "files": {
+              "App.css": 1072,
+              "App.js": 920,
+              "App.test.js": 254,
+              "index.css": 379,
+              "index.js": 552,
+              "logo.svg": 2632,
+              "reportWebVitals.js": 375,
+              "setupTests.js": 246
+            },
+            "directories": {
+              "components": {
+                "files": {
+                  "CarteAnnulationFrance.js": 5069,
+                  "CarteRetardFrance.js": 5103,
+                  "Contexte.css": 1682,
+                  "Contexte.js": 2554,
+                  "Graph.css": 1698,
+                  "Graph.js": 7050,
+                  "Header.css": 1891,
+                  "Header.js": 847,
+                  "Home.css": 845,
+                  "Home.js": 611,
+                  "PieChart.css": 1698,
+                  "PieChart.js": 5766,
+                  "TrainDataVisualization.css": 214,
+                  "TrainDataVisualization.js": 429
+                },
+                "directories": {}
+              }
+            }
+          }
+        }
+      },
+      "total_size": 1460461
+    };
 
-  <script>
-    // Fetch JSON file and process it
-    fetch('./data/directory-tree.json')
-      .then(response => response.json())
-      .then(data => {
-        const treeData = formatData(data.tree);
-        renderTree(treeData);
-      })
-      .catch(error => console.error('Error loading the JSON:', error));
+    const treeData = formatData(data.tree);
+    renderTree(treeData);
+    simpleTree(treeData);
+    renderBubbleChart(treeData);
 
-    // Function to format JSON data for D3.js
+    // Format data for D3
     function formatData(tree) {
       const formatNode = (name, files, directories) => ({
-        name: name,
+        name,
         size: files ? Object.values(files).reduce((a, b) => a + b, 0) : 0,
         children: [
-          ...Object.keys(directories).map(dirName => formatNode(dirName, directories[dirName].files, directories[dirName].directories)),
+          ...Object.keys(directories).map(dirName =>
+            formatNode(dirName, directories[dirName].files, directories[dirName].directories)
+          ),
           ...Object.keys(files).map(fileName => ({ name: fileName, size: files[fileName] }))
         ]
       });
-
       return formatNode("root", tree.files, tree.directories);
     }
 
-    // Function to render the tree using D3.js
+    function simpleTree(data){
+      const width = window.innerWidth, height = 600;
+      const svg = d3.select("#simpleTree") // Changed target to "simpleTree"
+        .attr("width", width)
+        .attr("height", height);
+  
+      const treeLayout = d3.tree().size([height - 100, width - 200]);
+  
+      // Hierarchy root
+      const root = d3.hierarchy(data);
+      treeLayout(root);
+  
+      // Links between nodes
+      svg.selectAll(".link")
+        .data(root.links())
+        .enter().append("path")
+        .attr("class", "link")
+        .attr("d", d3.linkVertical().x(d => d.y).y(d => d.x));
+  
+      // Nodes (files and directories)
+      const nodes = svg.selectAll(".node")
+        .data(root.descendants())
+        .enter().append("g")
+        .attr("class", "node")
+        .attr("transform", d => `translate(${d.y},${d.x})`);
+  
+      nodes.append("rect")
+        .attr("width", 100)
+        .attr("height", 30)
+        .attr("rx", 10)
+        .attr("ry", 10)
+        .style("fill", d => (d.children ? "#4E9F3D" : "#85BB2F"))
+        .style("stroke", "#004C40")
+        .style("stroke-width", 2)
+        .style("cursor", "pointer")
+        .on("mouseover", function() {
+          d3.select(this).style("fill", "#006F3C"); // Darker color on hover
+        })
+        .on("mouseout", function() {
+          d3.select(this).style("fill", d => (d.children ? "#4E9F3D" : "#85BB2F"));
+        });
+
+      nodes.append("text")
+        .attr("dy", 20)
+        .attr("x", 50)
+        .style("text-anchor", "middle")
+        .text(d => d.data.name)
+        .style("font-size", "12px")
+        .style("fill", "#fff");
+    }
+
+
+    // Render hierarchical tree
     function renderTree(data) {
-      const width = 960;
-      const height = 600;
-
-      const svg = d3.select("svg");
+      const width = window.innerWidth, height = 600;
+      const svg = d3.select("#hierarchicalTree").attr("width", width).attr("height", height);
       const treeLayout = d3.tree().size([height, width - 200]);
-
       const root = d3.hierarchy(data);
       treeLayout(root);
 
-      const links = svg.selectAll(".link")
+      svg.selectAll(".link")
         .data(root.links())
         .enter().append("path")
         .attr("class", "link")
@@ -92,6 +205,149 @@
         .attr("x", d => (d.children ? -10 : 10))
         .style("text-anchor", d => (d.children ? "end" : "start"))
         .text(d => d.data.name);
+    }
+
+    // Render circle-packed layout
+    function renderSunburstChart(data) {
+      const width = window.innerWidth, height = 600;
+      const radius = Math.min(width, height) / 2;
+
+      const svg = d3.select("#stackedBarChart") // Replace previous container
+        .attr("width", width)
+        .attr("height", height)
+        .append("g")
+        .attr("transform", `translate(${width / 2},${height / 2})`);
+
+      // Create a partition layout
+      const partition = d3.partition()
+        .size([2 * Math.PI, radius]);
+
+      // Convert data to hierarchical format
+      const root = d3.hierarchy(data)
+        .sum(d => d.size)
+        .sort((a, b) => b.size - a.size); // Sort by size for better visualization
+
+      partition(root);
+
+      // Create the arcs
+      const arc = d3.arc()
+        .startAngle(d => d.x0)
+        .endAngle(d => d.x1)
+        .innerRadius(d => d.depth * (radius / 4)) // Space between rings
+        .outerRadius(d => (d.depth + 1) * (radius / 4)); // Space between rings
+
+      svg.selectAll("path")
+        .data(root.descendants())
+        .enter().append("path")
+        .attr("d", arc)
+        .style("fill", d => d.children ? "#85BB2F" : "#00803E") // Different color for files vs directories
+        .style("stroke", "#fff")
+        .style("stroke-width", 1)
+        .on("mouseover", function (event, d) {
+          d3.select(this).style("fill", "#004C40");
+        })
+        .on("mouseout", function (event, d) {
+          d3.select(this).style("fill", d.children ? "#85BB2F" : "#00803E");
+        });
+
+      // Add text labels
+      svg.selectAll("text")
+        .data(root.descendants())
+        .enter().append("text")
+        .attr("transform", function(d) {
+          const angle = (d.x0 + d.x1) / 2;
+          const radius = (d.depth + 1) * (radius / 4);
+          return `translate(${arc.centroid(d)}) rotate(${angle * 180 / Math.PI - 90})`;
+        })
+        .style("text-anchor", "middle")
+        .style("font-size", "10px")
+        .text(d => d.children ? "" : d.data.name);
+
+      // Add a legend
+      const legend = svg.append("g")
+        .attr("transform", `translate(${radius + 20},${-radius - 20})`);
+      
+      const legendData = [
+        { name: "File", color: "#00803E" },
+        { name: "Directory", color: "#85BB2F" }
+      ];
+
+      legend.selectAll(".legend-item")
+        .data(legendData)
+        .enter().append("g")
+        .attr("class", "legend-item")
+        .attr("transform", (d, i) => `translate(0, ${i * 25})`)
+        .each(function(d) {
+          d3.select(this).append("circle")
+            .attr("r", 10)
+            .attr("fill", d.color);
+
+          d3.select(this).append("text")
+            .attr("x", 20)
+            .attr("y", 5)
+            .style("font-size", "12px")
+            .text(d.name);
+        });
+    }
+
+    function renderBubbleChart(data) {
+      const width = window.innerWidth, height = 600;
+      const svg = d3.select("#stackedBarChart") // Replace previous container
+        .attr("width", width)
+        .attr("height", height);
+
+      // Create the root for hierarchical data
+      const root = d3.hierarchy(data).sum(d => d.size);
+
+      const pack = d3.pack()
+        .size([width, height])
+        .padding(3);
+
+      const nodes = pack(root).descendants();
+
+      const node = svg.selectAll("g")
+        .data(nodes)
+        .enter().append("g")
+        .attr("transform", d => `translate(${d.x},${d.y})`);
+
+      // Draw circles (bubbles)
+      node.append("circle")
+        .attr("r", d => d.r)
+        .style("fill", (d, i) => d.children ? "#85BB2F" : "#00803E")
+        .style("stroke", "#fff")
+        .style("stroke-width", 2);
+
+      // Add text labels inside the bubbles
+      node.append("text")
+        .attr("dy", "0.3em")
+        .style("text-anchor", "middle")
+        .text(d => d.children ? "" : d.data.name) // Display name for leaves
+        .style("font-size", d => Math.min(12, d.r / 3) + "px")
+        .style("fill", "#fff");
+
+      // Add a legend
+      const legend = svg.append("g").attr("transform", `translate(20, ${height + 20})`);
+      const legendData = [
+        { name: "File", color: "#00803E" },
+        { name: "Directory", color: "#85BB2F" }
+      ];
+
+      legend.selectAll(".legend-item")
+        .data(legendData)
+        .enter().append("g")
+        .attr("class", "legend-item")
+        .attr("transform", (d, i) => `translate(0, ${i * 25})`)
+        .each(function(d) {
+          d3.select(this).append("circle")
+            .attr("r", 10)
+            .attr("fill", d.color);
+
+          d3.select(this).append("text")
+            .attr("x", 20)
+            .attr("y", 5)
+            .style("font-size", "12px")
+            .text(d.name);
+        });
     }
   </script>
 </body>
