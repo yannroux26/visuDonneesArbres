@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Directory Tree</title>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <style>
+    .node {
+      cursor: pointer;
+      fill: #00803E;
+    }
+
+    .node:hover {
+      fill: #004C40;
+    }
+
+    .label {
+      font-size: 14px;
+      font-family: "Arial", sans-serif;
+      fill: #000;
+    }
+
+    .link {
+      fill: none;
+      stroke: #ccc;
+      stroke-width: 1.5px;
+    }
+
+    .leaf {
+      fill: #85BB2F;
+    }
+  </style>
+</head>
+<body>
+  <h2>Directory Tree</h2>
+  <svg width="100%" height="600"></svg>
+
+  <script>
+    // Fetch JSON file and process it
+    fetch('./data/directory-tree.json')
+      .then(response => response.json())
+      .then(data => {
+        const treeData = formatData(data.tree);
+        renderTree(treeData);
+      })
+      .catch(error => console.error('Error loading the JSON:', error));
+
+    // Function to format JSON data for D3.js
+    function formatData(tree) {
+      const formatNode = (name, files, directories) => ({
+        name: name,
+        size: files ? Object.values(files).reduce((a, b) => a + b, 0) : 0,
+        children: [
+          ...Object.keys(directories).map(dirName => formatNode(dirName, directories[dirName].files, directories[dirName].directories)),
+          ...Object.keys(files).map(fileName => ({ name: fileName, size: files[fileName] }))
+        ]
+      });
+
+      return formatNode("root", tree.files, tree.directories);
+    }
+
+    // Function to render the tree using D3.js
+    function renderTree(data) {
+      const width = 960;
+      const height = 600;
+
+      const svg = d3.select("svg");
+      const treeLayout = d3.tree().size([height, width - 200]);
+
+      const root = d3.hierarchy(data);
+      treeLayout(root);
+
+      const links = svg.selectAll(".link")
+        .data(root.links())
+        .enter().append("path")
+        .attr("class", "link")
+        .attr("d", d3.linkHorizontal().x(d => d.y).y(d => d.x));
+
+      const nodes = svg.selectAll(".node")
+        .data(root.descendants())
+        .enter().append("g")
+        .attr("class", "node")
+        .attr("transform", d => `translate(${d.y},${d.x})`);
+
+      nodes.append("circle")
+        .attr("r", 5)
+        .attr("class", d => (d.children ? "node" : "leaf"));
+
+      nodes.append("text")
+        .attr("dy", 3)
+        .attr("x", d => (d.children ? -10 : 10))
+        .style("text-anchor", d => (d.children ? "end" : "start"))
+        .text(d => d.data.name);
+    }
+  </script>
+</body>
+</html>

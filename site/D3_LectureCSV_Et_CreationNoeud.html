@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<script src="http://d3js.org/d3.v3.min.js"></script> <!-- NECESSAIRE POUR ACCEDER AU NAMESPACE DE D3 -->
+
+	<meta charset="utf-8">
+
+	<title>LECTURE DE CSV</title>
+</head>
+<body> 
+ 
+	<h1>Lecture CSV en D3 avec Insertion de Noeuds</h1>
+ 
+<!-- LIS ET TRAITE DES DONNEES A PARTIR D'UN FICHIER CSV -->
+	<script>
+		d3.csv("http://localhost:8000/MonFichierCSV.csv", function( Erreur, csv) {
+			var DonneesEnSortie = [];
+
+			csv.forEach(function(x) {
+				var Valeur2 = x.Colonne2,
+					Valeur5 = x.Colonne5 * 2.;
+				console.log(Valeur2);
+				console.log(Valeur5);
+				DonneesEnSortie.push(Valeur2);
+				DonneesEnSortie.push(Valeur5);
+			}); // FIN DE CSV.FOREACH
+
+			d3.select("body").selectAll("p")
+			.data(DonneesEnSortie)
+			.enter().append("p")
+			.text(function(d) { return "la donnee traitee vaut " + d; });
+
+		}); // FIN DE D3.CSV
+	</script>
+ 
+	<noscript>Vous devez activer JavaScript sur votre lecteur</noscript>
+</body>
+</html>

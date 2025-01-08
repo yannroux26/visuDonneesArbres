@@ -1,0 +1,65 @@
+{
+    "tree": {
+        "files": {
+            "package-lock.json": 656216,
+            "package.json": 1025,
+            "README.md": 3429
+        },
+        "directories": {
+            "public": {
+                "files": {
+                    "DELAYS512.png": 85473,
+                    "DELAYS5192.png": 85473,
+                    "favicon.ico": 85473,
+                    "index.html": 1771,
+                    "manifest.json": 517,
+                    "robots.txt": 70
+                },
+                "directories": {
+                    "data": {
+                        "files": {
+                            "france-regions.json": 489330,
+                            "regularite-mensuelle-ter-by-region-and-year.csv": 8519,
+                            "regularite-mensuelle-ter.csv": 1278
+                        },
+                        "directories": {}
+                    }
+                }
+            },
+            "src": {
+                "files": {
+                    "App.css": 1072,
+                    "App.js": 920,
+                    "App.test.js": 254,
+                    "index.css": 379,
+                    "index.js": 552,
+                    "logo.svg": 2632,
+                    "reportWebVitals.js": 375,
+                    "setupTests.js": 246
+                },
+                "directories": {
+                    "components": {
+                        "files": {
+                            "CarteAnnulationFrance.js": 5069,
+                            "CarteRetardFrance.js": 5103,
+                            "Contexte.css": 1682,
+                            "Contexte.js": 2554,
+                            "Graph.css": 1698,
+                            "Graph.js": 7050,
+                            "Header.css": 1891,
+                            "Header.js": 847,
+                            "Home.css": 845,
+                            "Home.js": 611,
+                            "PieChart.css": 1698,
+                            "PieChart.js": 5766,
+                            "TrainDataVisualization.css": 214,
+                            "TrainDataVisualization.js": 429
+                        },
+                        "directories": {}
+                    }
+                }
+            }
+        }
+    },
+    "total_size": 1460461
+}
