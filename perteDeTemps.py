@@ -1,5 +1,6 @@
 import random
 from math import sqrt
+import numpy as np
 import matplotlib.pyplot as plt
 
 def Decomp(tab):
@@ -39,6 +40,40 @@ def erreur(tab1,tab2):
         e += (tab1[i] - tab2[i]) ** 2
     return sqrt(e)
 
+def histoGraphe(tab, maxVal):
+    decompTab = Decomp(tab.copy())
+    
+    plt.figure(figsize=(12, 6))  # Réduire la largeur de la figure
+    
+    # Graphique du tableau d'entrée
+    plt.subplot(1, 3, 1)
+    plt.plot(tab, marker='o')
+    plt.title('Graphique du tableau d\'entrée')
+    
+    # Histogramme des valeurs absolues de tab regroupées par entier
+    plt.subplot(1, 3, 2)
+    abs_values = [abs(val) for val in decompTab]
+    grouped_values = [int(val) for val in abs_values]
+    plt.hist(grouped_values, bins=range(min(grouped_values), max(grouped_values) + 1))
+    plt.title('Histogramme des valeurs absolues de tab regroupées par entier')
+    
+    # Graphique des erreurs en fonction de epsilon
+    x = []
+    y = []
+    for i in range(0, maxVal, 1):
+        epsilon = i
+        recompPartTab = RecompPart(decompTab.copy(), epsilon)
+        res = Recomp(recompPartTab.copy())
+        e = erreur(tab, res)
+        x.append(epsilon)
+        y.append(e)
+        
+    plt.subplot(1, 3, 3)
+    plt.plot(x, y)
+    plt.title('Graphique des erreurs en fonction de epsilon')
+    plt.tight_layout()
+    plt.show()
+
 if __name__ == "__main__":
     epsilon = 10
     maxVal = 100
@@ -56,27 +91,25 @@ if __name__ == "__main__":
     e = erreur(tab,res)
     print("erreur : ",e)
     
-    # histogramme des valeurs absolues de tab
-    plt.figure(figsize=(12, 6))
-    plt.subplot(1, 2, 1)
-    plt.hist([abs(val) for val in decompTab], bins=100)
-    plt.title('Histogramme des valeurs absolues de tab')
+    print("\nRANDOM\n")
+    histoGraphe(tab,maxVal)
     
-    # graphique des erreurs en fonction de epsilon
-    x = []
-    y = []
-    for i in range(0, maxVal, 1):
-        epsilon = i
-        recompPartTab = RecompPart(decompTab.copy(),epsilon)
-        res = Recomp(recompPartTab.copy())
-        e = erreur(tab,res)
-        x.append(epsilon)
-        y.append(e)
-        
-    plt.subplot(1, 2, 2)
-    plt.plot(x, y)
-    plt.title('Graphique des erreurs en fonction de epsilon')
-    plt.tight_layout()
-    plt.show()
+    # Tableau de taille 32 avec les valeurs de sinus
+    print("\nSINUS\n")
+    tab_sin = [np.sin(2 * np.pi * i / 32)*100 for i in range(32)]
+    print("tab sinus: ", tab_sin)
+    histoGraphe(tab_sin, maxVal)
+    
+    # Tableau de taille 32 avec les valeurs de x carré
+    print("\nx carré\n")
+    tab_carre = [i**2 for i in range(32)]
+    print("tab x carré: ", tab_carre)
+    histoGraphe(tab_carre, maxVal)
+    
+    # Tableau de taille 32 avec les valeurs de moins x carré
+    print("\nmoins x carré\n")
+    tab_neg_carre = [-i**2 for i in range(32)]
+    print("tab x carré: ", tab_neg_carre)
+    histoGraphe(tab_neg_carre, maxVal)
     
     
