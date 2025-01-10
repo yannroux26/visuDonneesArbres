@@ -37,6 +37,9 @@
   <svg id="hierarchicalTree" width="100%" height="600"></svg>
   <h2>Bubble Chart</h2>
   <svg id="stackedBarChart" width="100%" height="400"></svg>
+  <h2>Sunburst Chart</h2>
+<svg id="sunburstChart" width="100%" height="600"></svg>
+
    <script>
     const data = {
       "tree": {
@@ -108,7 +111,7 @@
     renderTree(treeData);
     simpleTree(treeData);
     renderBubbleChart(treeData);
-
+    renderSunburstChart(treeData)
     // Format data for D3
     function formatData(tree) {
       const formatNode = (name, files, directories) => ({
@@ -206,89 +209,74 @@
         .style("text-anchor", d => (d.children ? "end" : "start"))
         .text(d => d.data.name);
     }
-
-    // Render circle-packed layout
     function renderSunburstChart(data) {
-      const width = window.innerWidth, height = 600;
-      const radius = Math.min(width, height) / 2;
-
-      const svg = d3.select("#stackedBarChart") // Replace previous container
+      const width = 600; // Chart width
+      const height = 600; // Chart height
+      const radius = Math.min(width, height) / 2; // Radius of the chart
+    
+      // Select the SVG element and set up dimensions
+      const svg = d3.select("#sunburstChart")
         .attr("width", width)
         .attr("height", height)
         .append("g")
         .attr("transform", `translate(${width / 2},${height / 2})`);
-
+    
       // Create a partition layout
-      const partition = d3.partition()
-        .size([2 * Math.PI, radius]);
-
-      // Convert data to hierarchical format
+      const partition = d3.partition().size([2 * Math.PI, radius]);
+    
+      // Create a root hierarchy and calculate sizes
       const root = d3.hierarchy(data)
         .sum(d => d.size)
-        .sort((a, b) => b.size - a.size); // Sort by size for better visualization
-
+        .sort((a, b) => b.value - a.value); // Sort by value for cleaner layout
+    
       partition(root);
-
-      // Create the arcs
+    
+      // Create arcs
       const arc = d3.arc()
         .startAngle(d => d.x0)
         .endAngle(d => d.x1)
-        .innerRadius(d => d.depth * (radius / 4)) // Space between rings
-        .outerRadius(d => (d.depth + 1) * (radius / 4)); // Space between rings
-
+        .innerRadius(d => d.y0)
+        .outerRadius(d => d.y1);
+    
+      // Append paths for each node
       svg.selectAll("path")
         .data(root.descendants())
         .enter().append("path")
         .attr("d", arc)
-        .style("fill", d => d.children ? "#85BB2F" : "#00803E") // Different color for files vs directories
+        .style("fill", d => d.depth === 0 ? "#fff" : d.children ? "#85BB2F" : "#00803E") // Colors for files and directories
         .style("stroke", "#fff")
         .style("stroke-width", 1)
         .on("mouseover", function (event, d) {
-          d3.select(this).style("fill", "#004C40");
+          d3.select(this).style("fill", "#004C40"); // Highlight on hover
         })
         .on("mouseout", function (event, d) {
-          d3.select(this).style("fill", d.children ? "#85BB2F" : "#00803E");
+          d3.select(this).style("fill", d.depth === 0 ? "#fff" : d.children ? "#85BB2F" : "#00803E");
         });
-
-      // Add text labels
+    
+      // Add labels
       svg.selectAll("text")
-        .data(root.descendants())
+        .data(root.descendants().filter(d => d.depth > 0)) // Exclude the root node
         .enter().append("text")
-        .attr("transform", function(d) {
-          const angle = (d.x0 + d.x1) / 2;
-          const radius = (d.depth + 1) * (radius / 4);
-          return `translate(${arc.centroid(d)}) rotate(${angle * 180 / Math.PI - 90})`;
+        .attr("transform", function (d) {
+          const angle = (d.x0 + d.x1) / 2; // Mid-angle in radians
+          const x = Math.sin(angle) * (d.y0 + (d.y1 - d.y0) / 2); // Adjusted x
+          const y = -Math.cos(angle) * (d.y0 + (d.y1 - d.y0) / 2); // Adjusted y
+          return `translate(${x},${y}) rotate(${(angle * 180 / Math.PI) - 90})`;
         })
-        .style("text-anchor", "middle")
+        .attr("text-anchor", "middle")
         .style("font-size", "10px")
-        .text(d => d.children ? "" : d.data.name);
-
-      // Add a legend
-      const legend = svg.append("g")
-        .attr("transform", `translate(${radius + 20},${-radius - 20})`);
-      
-      const legendData = [
-        { name: "File", color: "#00803E" },
-        { name: "Directory", color: "#85BB2F" }
-      ];
-
-      legend.selectAll(".legend-item")
-        .data(legendData)
-        .enter().append("g")
-        .attr("class", "legend-item")
-        .attr("transform", (d, i) => `translate(0, ${i * 25})`)
-        .each(function(d) {
-          d3.select(this).append("circle")
-            .attr("r", 10)
-            .attr("fill", d.color);
-
-          d3.select(this).append("text")
-            .attr("x", 20)
-            .attr("y", 5)
-            .style("font-size", "12px")
-            .text(d.name);
-        });
+        .style("fill", "#000")
+        .text(d => d.data.name);
+    
+      // Add a central label for total size
+      svg.append("text")
+        .attr("text-anchor", "middle")
+        .style("font-size", "14px")
+        .style("font-weight", "bold")
+        .style("fill", "#000")
+        .text("Total Size: " + root.value);
     }
+    
 
     function renderBubbleChart(data) {
       const width = window.innerWidth, height = 600;
